@@ -1,0 +1,88 @@
+name: Import Zenni source and publish review SWF
+
+on:
+  push:
+    branches:
+      - zenni-hollow-star
+    paths:
+      - 'CoCX_Zenni_Source.part1'
+      - 'CoCX_Zenni_Source.part2'
+      - 'CoCX_Zenni_Review.swf'
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: zenni-hollow-star
+          persist-credentials: true
+      - name: Import verified 0.9a.995 source snapshot
+        run: |
+          python3 - <<'PY'
+          import hashlib, os, shutil, zipfile
+          from pathlib import Path, PurePosixPath
+          root = Path('.')
+          swf = root / 'CoCX_Zenni_Review.swf'
+          if swf.exists():
+              shutil.copyfile(swf, Path(os.environ['RUNNER_TEMP']) / swf.name)
+              swf.unlink()
+          first = root / 'CoCX_Zenni_Source.part1'
+          second = root / 'CoCX_Zenni_Source.part2'
+          if not (first.exists() and second.exists()):
+              print('Waiting for both source archive parts.')
+          else:
+              archive = first.read_bytes() + second.read_bytes()
+              expected = '79d02799121823e9b90f03fe158d56b3f87a77e66a80cd3737f143b7aedde7c4'
+              if hashlib.sha256(archive).hexdigest() != expected:
+                  raise RuntimeError('Source archive hash mismatch; no files were replaced')
+              archive_path = Path(os.environ['RUNNER_TEMP']) / 'source.zip'
+              archive_path.write_bytes(archive)
+              with zipfile.ZipFile(archive_path) as z:
+                  if z.testzip():
+                      raise RuntimeError('Source archive failed CRC validation')
+                  names = set(z.namelist())
+                  if 'classes/classes/CoC.as' not in names:
+                      raise RuntimeError('Expected game source missing')
+                  if b'v0.9a.995' not in z.read('classes/classes/CoC.as'):
+                      raise RuntimeError('Incorrect CoCX source version')
+                  for entry in z.infolist():
+                      p = PurePosixPath(entry.filename)
+                      if p.is_absolute() or '..' in p.parts or (entry.external_attr >> 16) & 0o170000 == 0o120000:
+                          raise RuntimeError('Unsafe archive entry')
+                  protected = {'.git', '.github', 'ZENNI_DEVELOPMENT.md', 'ZENNI_SOURCE_PROVENANCE.md'}
+                  for item in root.iterdir():
+                      if item.name in protected:
+                          continue
+                      if item.is_dir():
+                          shutil.rmtree(item)
+                      else:
+                          item.unlink()
+                  z.extractall(root)
+              print('Imported verified CoCX v0.9a.995 source')
+          PY
+      - name: Commit source snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Import Zenni and Hollow Star on CoCX v0.9a.995"
+            git push origin HEAD:zenni-hollow-star
+          fi
+      - name: Publish SWF as prerelease asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SWF="$RUNNER_TEMP/CoCX_Zenni_Review.swf"
+          if test -f "$SWF"; then
+            TAG="zenni-hollow-star-v0.9a.995-review"
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              gh release upload "$TAG" "$SWF" --clobber
+            else
+              gh release create "$TAG" "$SWF" --target zenni-hollow-star --prerelease --title "Zenni & The Hollow Star — CoCX v0.9a.995 review build" --notes "Development SWF built from CoCX v0.9a.995 source. Gameplay testing remains in progress."
+            fi
+          fi
