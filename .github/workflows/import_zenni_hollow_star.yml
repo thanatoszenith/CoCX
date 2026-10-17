@@ -1,0 +1,64 @@
+name: Import Zenni & Hollow Star (CoCX 0.9a.995)
+
+on:
+  push:
+    branches:
+      - feature/zenni-hollow-star
+    paths:
+      - 'CoCX_Zenni_HollowStar_GitHub_PR_Handoff.zip'
+      - 'CoCX_Zenni_HollowStar_ScorpionTail_Cleanup_Test_Build.swf'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    if: github.ref == 'refs/heads/feature/zenni-hollow-star'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out contribution branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Import verified source overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f 'CoCX_Zenni_HollowStar_GitHub_PR_Handoff.zip' ]; then
+            echo '839b27fb02ed478e65a4dc73c0e756eab5608d95be210b71ecdd00f69e5e60e2  CoCX_Zenni_HollowStar_GitHub_PR_Handoff.zip' | sha256sum -c -
+            test -f classes/classes/CoC.as
+            grep -Fq 'v0.9a.995' classes/classes/CoC.as || { echo 'STOP: the base source is not CoCX 0.9a.995'; exit 1; }
+            mkdir -p "$RUNNER_TEMP/zenni_overlay"
+            unzip -q 'CoCX_Zenni_HollowStar_GitHub_PR_Handoff.zip' 'overlay/*' -d "$RUNNER_TEMP/zenni_overlay"
+            test -s "$RUNNER_TEMP/zenni_overlay/overlay/classes/classes/Scenes/NPCs/ZenniScene.as"
+            # Preserve the more current in-repository documentation.
+            rm -f "$RUNNER_TEMP/zenni_overlay/overlay/README_ZENNI_HOLLOWSTAR.md"
+            cp -a "$RUNNER_TEMP/zenni_overlay/overlay/." .
+          else
+            echo 'Source archive not present; processing any supplied review SWF only.'
+          fi
+
+      - name: Store compiled review SWF as a build artifact
+        if: ${{ hashFiles('CoCX_Zenni_HollowStar_ScorpionTail_Cleanup_Test_Build.swf') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: CoCX-0.9a.995-Zenni-Hollow-Star-review-SWF
+          path: 'CoCX_Zenni_HollowStar_ScorpionTail_Cleanup_Test_Build.swf'
+          retention-days: 90
+
+      - name: Commit imported source and remove transfer files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "CoCX contribution import"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A classes res/sprites README_ZENNI_HOLLOWSTAR.md
+          git rm -f --ignore-unmatch 'CoCX_Zenni_HollowStar_GitHub_PR_Handoff.zip' 'CoCX_Zenni_HollowStar_ScorpionTail_Cleanup_Test_Build.swf'
+          if ! git diff --cached --quiet; then
+            git commit -m "Add Zenni & Hollow Star expansion based on CoCX 0.9a.995"
+            git push origin HEAD:feature/zenni-hollow-star
+          else
+            echo 'No changes to import.'
+          fi
