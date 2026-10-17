@@ -18,3 +18,9 @@ This branch is dedicated to game-content development for CoCX, based on `master-
 3. Check that all references, imports, registration paths, flags, and event triggers are wired correctly.
 4. Test new content and regressions, including save/load and game startup, whenever a working build environment is available.
 5. Keep any Android-specific packaging changes in a different branch/workstream.
+
+## Version provenance and SWF artifact
+- **Intended source baseline:** CoCX **0.9a.993-mod** (the version selected for Zenni content development). This fork currently starts from upstream `master-wip`; **the exact upstream source version has not yet been independently verified** against 0.9a.993-mod.
+- **Existing compiled mod artifact:** `CoCX_0.9a.995mod_Zenni_HollowStar.swf` (filename supplied in the earlier project). Its filename indicates **0.9a.995mod**, but that does not establish the source revision from which it was compiled. Do not relabel it as 0.9a.993 or claim the current source reproduces it without comparison.
+- **SWF repository status:** Not uploaded yet. Add the original SWF as a binary artifact once the file bytes are available; do not substitute a placeholder or rename another build.
+- Once verified, record the source commit, upstream tag/version, SWF SHA-256, build command, and any differences between the 0.9a.993-mod baseline and 0.9a.995mod artifact.
