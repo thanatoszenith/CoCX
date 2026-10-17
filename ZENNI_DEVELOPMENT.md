@@ -1,6 +1,6 @@
 # Zenni & The Hollow Star — Development Instructions
 
-This branch is dedicated to game-content development for CoCX, based on `master-wip`.
+This contribution is **based on the CoCX 0.9a.995 game source** (the `CoCX_0.9a.995` snapshot). The GitHub contribution branch starts from upstream `master-wip`; verify that upstream's current revision matches the target source before applying or merging the content files.
 
 ## Boundaries
 - Keep Zenni/Hollow Star content development separate from the Android wrapper, APK packaging, fullscreen and performance work.
@@ -14,13 +14,13 @@ This branch is dedicated to game-content development for CoCX, based on `master-
 
 ## Workflow
 1. Read `BUILDING.md`, `CODING.md`, and relevant source before changing anything.
-2. Develop content in focused commits on this branch, not on `master-wip`.
+2. Develop content in focused commits on `feature/zenni-hollow-star`, not on `master-wip`.
 3. Check that all references, imports, registration paths, flags, and event triggers are wired correctly.
 4. Test new content and regressions, including save/load and game startup, whenever a working build environment is available.
 5. Keep any Android-specific packaging changes in a different branch/workstream.
 
 ## Version provenance and SWF artifact
-- **Intended base game:** CoCX **0.9a.995-mod** for Zenni & The Hollow Star. This fork currently starts from upstream `master-wip`; **the exact upstream source version has not yet been independently verified** against 0.9a.995-mod.
-- **Existing compiled mod artifact:** `CoCX_0.9a.995mod_Zenni_HollowStar.swf` (filename supplied in the earlier project). Its filename indicates **0.9a.995mod**, but that does not establish the source revision from which it was compiled. Do not claim the current source reproduces it without a source/version comparison.
-- **SWF repository status:** Not uploaded yet. Add the original SWF as a binary artifact once the file bytes are available; do not substitute a placeholder or rename another build.
-- Once verified, record the source commit, upstream tag/version, SWF SHA-256, build command, and any differences between the verified source baseline and the 0.9a.995mod artifact.
+- **Source base:** `CoCX_0.9a.995` / `v0.9a.995`, as supplied for this expansion. This is a source-version claim, not a claim that current upstream `master-wip` is unchanged.
+- **Compiled review artifact:** `CoCX_Zenni_HollowStar_ScorpionTail_Cleanup_Test_Build.swf`. It was compiled from the cleaned content source, preserving the upstream in-game version string. Structural SWF checks and static regression checks were completed; interactive gameplay testing remains outstanding.
+- **SWF repository status:** Not uploaded as a binary artifact yet. Add the actual compiled file to a draft GitHub Release or other binary-hosting location once the bytes are transferred.
+- Once published, record the source commit, target upstream source revision, SWF SHA-256, build command, and any difference between the GitHub branch baseline and the CoCX 0.9a.995 source snapshot.
